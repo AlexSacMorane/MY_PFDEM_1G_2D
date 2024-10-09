@@ -127,7 +127,7 @@ def get_parameters():
     # kinetics of dissolution and precipitation
     # it affects the tilting coefficient in Ed
     k_diss = 1*(0.005)/(m_size_mesh) # ed_j = ed_i*m_i/m_j
-    k_prec = k_diss*2 # -
+    k_prec = k_diss*5 # -
 
     # molar concentration at the equilibrium
     C_eq = (0.73*1e3)/(n_mol/n_dist**3) # (mol m-3)/(mol m-3)

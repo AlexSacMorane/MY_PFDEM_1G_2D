@@ -242,9 +242,10 @@ def compute_ed(dict_user, dict_sample):
         # compute saturation
         if as_value*c_eq != c_eq:
             saturation = 100*(c-c_eq)/(as_value*c_eq-c_eq)
-            # same profile
-            L_profile_sat.append(saturation)
-            L_x.append(dict_sample['x_L'][i_x])
+            if saturation < 200:
+                # same profile
+                L_profile_sat.append(saturation)
+                L_x.append(dict_sample['x_L'][i_x])
         # compute solute concentration in pore
         else :
             m_c_pore = m_c_pore + c
@@ -275,6 +276,20 @@ def compute_ed(dict_user, dict_sample):
         fig.tight_layout()
         fig.savefig('plot/saturation.png')
         plt.close(fig)
+
+        # compute the evolution of the mean saturation 
+        L_m_saturation = []
+        for L_profile_sat in dict_user['L_L_profile_sat']:
+            L_m_saturation.append(np.mean(L_profile_sat))
+        # figure
+        fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
+        ax1.plot(L_m_saturation)
+        ax1.set_title('mean saturation in the contact (%)',fontsize=20)
+        ax1.set_xlabel('iteration (-)')
+        fig.tight_layout()
+        fig.savefig('plot/m_saturation.png')
+        plt.close(fig)
+
     # plot
     if 'm_c_pore' in dict_user['L_figures']:
         # create figure
