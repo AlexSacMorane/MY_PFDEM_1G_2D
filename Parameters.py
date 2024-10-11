@@ -21,7 +21,7 @@ def get_parameters():
     #---------------------------------------------------------------------#
     # PFDEM
 
-    n_DEMPF_ite = 100 # number of PFDEM iterations
+    n_DEMPF_ite = 150 # number of PFDEM iterations
     n_proc = 4 # number of processors used
     j_total = 0 # index global of results
     save_simulation = False # indicate if the simulation is saved
@@ -94,7 +94,7 @@ def get_parameters():
         size_x_mesh = radius/40
         size_y_mesh = size_x_mesh
         m_size_mesh = (size_x_mesh+size_y_mesh)/2
-        margin_mesh_domain = 10*size_x_mesh
+        margin_mesh_domain = 15*size_x_mesh
     # constant mesh
     else :
         x_min = -1.3*radius
@@ -127,13 +127,13 @@ def get_parameters():
     # kinetics of dissolution and precipitation
     # it affects the tilting coefficient in Ed
     k_diss = 1*(0.005)/(m_size_mesh) # ed_j = ed_i*m_i/m_j
-    k_prec = k_diss*5 # -
+    k_prec = k_diss*10 # -
 
     # molar concentration at the equilibrium
     C_eq = (0.73*1e3)/(n_mol/n_dist**3) # (mol m-3)/(mol m-3)
 
     # diffusion of the solute
-    size_film = m_size_mesh*6
+    size_film = m_size_mesh*5
     D_solute = (4e-14/2/size_film)/(n_dist*n_dist/n_time) # (m2 s-1)/(m2 s-1)
     n_struct_element = int(round(size_film/m_size_mesh,0))
     struct_element = np.array(np.ones((n_struct_element,n_struct_element)), dtype=bool) # for dilation
@@ -210,20 +210,18 @@ def get_parameters():
     L_sample_height = []
     L_y_contactPoint = []
     L_loss_move_pf_eta1 = []
-    L_loss_move_pf_eta2 = []
     L_loss_move_pf_c = []
     L_loss_move_pf_m = []
     L_loss_kc_eta1 = []
-    L_loss_kc_eta2 = []
     L_loss_kc_c = []
     L_loss_kc_m = []
     L_loss_pf_eta1 = []
-    L_loss_pf_eta2 = []
     L_loss_pf_c = []
     L_loss_pf_m = []
     L_L_profile_sat = []
     L_L_x = []
     L_m_c_pore = []
+    L_m_sat_contact = []
     if remesh:
         L_x_min_dom = []
         L_x_max_dom = []
@@ -331,20 +329,18 @@ def get_parameters():
     'L_sample_height': L_sample_height,
     'L_y_contactPoint': L_y_contactPoint,
     'L_loss_move_pf_eta1': L_loss_move_pf_eta1,
-    'L_loss_move_pf_eta2': L_loss_move_pf_eta2,
     'L_loss_move_pf_c': L_loss_move_pf_c,
     'L_loss_move_pf_m': L_loss_move_pf_m,
     'L_loss_kc_eta1': L_loss_kc_eta1,
-    'L_loss_kc_eta2': L_loss_kc_eta2,
     'L_loss_kc_c': L_loss_kc_c,
     'L_loss_kc_m': L_loss_kc_m,
     'L_loss_pf_eta1': L_loss_pf_eta1,
-    'L_loss_pf_eta2': L_loss_pf_eta2,
     'L_loss_pf_c': L_loss_pf_c,
     'L_loss_pf_m': L_loss_pf_m,
     'L_L_profile_sat': L_L_profile_sat,
     'L_L_x': L_L_x,
-    'L_m_c_pore': L_m_c_pore
+    'L_m_c_pore': L_m_c_pore,
+    'L_m_sat_contact': L_m_sat_contact
     }
 
     # specific inputs

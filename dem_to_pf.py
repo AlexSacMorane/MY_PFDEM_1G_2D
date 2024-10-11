@@ -228,12 +228,9 @@ def compute_ed(dict_user, dict_sample):
         fig.savefig('plot/contact_point_ed.png')
         plt.close(fig)
 
-    # compute saturation 
+    # compute saturation along the x axis at the contact point
     L_profile_sat = []
     L_x = []
-    # compute solute concentration in pore
-    m_c_pore = 0
-    n_c_pore =0
     # iterate on mesh
     for i_x in range(len(dict_sample['x_L'])):
         # read data
@@ -242,18 +239,36 @@ def compute_ed(dict_user, dict_sample):
         # compute saturation
         if as_value*c_eq != c_eq:
             saturation = 100*(c-c_eq)/(as_value*c_eq-c_eq)
-            if saturation < 200:
-                # same profile
-                L_profile_sat.append(saturation)
-                L_x.append(dict_sample['x_L'][i_x])
-        # compute solute concentration in pore
-        else :
-            m_c_pore = m_c_pore + c
-            n_c_pore = n_c_pore + 1 
+            # same profile
+            L_profile_sat.append(saturation)
+            L_x.append(dict_sample['x_L'][i_x])
     # save
     dict_user['L_L_profile_sat'].append(L_profile_sat)
     dict_user['L_L_x'].append(L_x)
+
+    
+    # compute solute concentration in pore
+    # and mean saturation in the contact
+    m_c_pore = 0
+    n_c_pore = 0
+    m_sat_contact = 0
+    n_sat_contact = 0
+    for i_x in range(len(dict_sample['x_L'])):
+        for i_y in range(len(dict_sample['y_L'])):
+            # in contact
+            if dict_sample['eta_1_map'][-1-i_y, i_x] > dict_user['eta_contact_box_detection'] and dict_sample['y_L'][i_y] <= 0:
+                as_value = dict_sample['as_map'][-1-i_y, i_x]
+                c = dict_sample['c_map'][-1-i_y, i_x]
+                saturation = 100*(c-c_eq)/(as_value*c_eq-c_eq)
+                m_sat_contact = m_sat_contact + saturation
+                n_sat_contact = n_sat_contact + 1
+            # in pore
+            elif dict_sample['eta_1_map'][-1-i_y, i_x] < dict_user['eta_contact_box_detection'] and dict_sample['y_L'][i_y] > 0:
+                c = dict_sample['c_map'][-1-i_y, i_x]
+                m_c_pore = m_c_pore + c
+                n_c_pore = n_c_pore + 1 
     dict_user['L_m_c_pore'].append(m_c_pore/n_c_pore)
+    dict_user['L_m_sat_contact'].append(m_sat_contact/n_sat_contact)
     # plot
     if 'saturation' in dict_user['L_figures']:
         # compute the plot frequence
@@ -277,13 +292,9 @@ def compute_ed(dict_user, dict_sample):
         fig.savefig('plot/saturation.png')
         plt.close(fig)
 
-        # compute the evolution of the mean saturation 
-        L_m_saturation = []
-        for L_profile_sat in dict_user['L_L_profile_sat']:
-            L_m_saturation.append(np.mean(L_profile_sat))
-        # figure
+        # plot mean value
         fig, (ax1) = plt.subplots(1,1,figsize=(16,9))
-        ax1.plot(L_m_saturation)
+        ax1.plot(dict_user['L_m_sat_contact'])
         ax1.set_title('mean saturation in the contact (%)',fontsize=20)
         ax1.set_xlabel('iteration (-)')
         fig.tight_layout()
@@ -459,22 +470,16 @@ def compute_kc(dict_user, dict_sample):
     kc_pore_map =  np.array(np.zeros((dict_user['n_mesh_y'], dict_user['n_mesh_x'])), dtype = bool)
     # iterate on x and y
     for i_y in range(len(dict_sample['y_L'])):
-        # fast checking
-        if max(dict_sample['eta_1_map'][-1-i_y, :])<0.5 and dict_sample['y_L'][i_y] > 0:
-            kc_map[-1-i_y, :] = True
-            kc_pore_map[-1-i_y, :] = True
-        # individual checking
-        else :
-            for i_x in range(len(dict_sample['x_L'])):
-                if dict_sample['eta_1_map'][-1-i_y, i_x] < 0.5 and dict_sample['y_L'][i_y] > 0: # out of the grain
-                    kc_map[-1-i_y, i_x] = True
-                    kc_pore_map[-1-i_y, i_x] = True
-                elif dict_sample['eta_1_map'][-1-i_y, i_x] > 0.5 and dict_sample['y_L'][i_y] <= 0: # in the contact
-                    kc_map[-1-i_y, i_x] = True
-                    kc_pore_map[-1-i_y, i_x] = False
-                else :
-                    kc_map[-1-i_y, i_x] = False
-                    kc_pore_map[-1-i_y, i_x] = False
+        for i_x in range(len(dict_sample['x_L'])):
+            if dict_sample['eta_1_map'][-1-i_y, i_x] < dict_user['eta_contact_box_detection'] and dict_sample['y_L'][i_y] > 0: # out of the grain
+                kc_map[-1-i_y, i_x] = True
+                kc_pore_map[-1-i_y, i_x] = True
+            elif dict_sample['eta_1_map'][-1-i_y, i_x] > dict_user['eta_contact_box_detection'] and dict_sample['y_L'][i_y] <= 0: # in the contact
+                kc_map[-1-i_y, i_x] = True
+                kc_pore_map[-1-i_y, i_x] = False
+            else :
+                kc_map[-1-i_y, i_x] = False
+                kc_pore_map[-1-i_y, i_x] = False
 
     # dilation
     dilated_M = binary_dilation(kc_map, dict_user['struct_element'])
@@ -525,11 +530,11 @@ def compute_kc(dict_user, dict_sample):
     for i_y in range(len(dict_sample['y_L'])):
         for i_x in range(len(dict_sample['x_L'])):
             # push solute out of the solid
-            if not dilated_M[i_y, i_x] and c_map[i_y, i_x] > 1: # threshold value
+            if not dilated_M[i_y, i_x] and c_map[i_y, i_x] > dict_user['C_eq']: # threshold value
                 solute_moved = False
                 size_window = 1
                 # compute solute to move
-                solute_to_move = c_map[i_y, i_x] - 1
+                solute_to_move = c_map[i_y, i_x] - dict_user['C_eq']
                 while not solute_moved :
                     i_window = 0
                     while not solute_moved and i_window <= size_window:
@@ -576,7 +581,7 @@ def compute_kc(dict_user, dict_sample):
                                 #to the right
                                 if right_available:
                                     c_map_new[i_y, i_x+size_window] = c_map_new[i_y, i_x+size_window] + solute_to_move/n_node_available
-                                c_map_new[i_y, i_x] = 1
+                                c_map_new[i_y, i_x] = dict_user['C_eq']
                                 solute_moved = True
 
                         #Look to move diagonally
@@ -652,17 +657,17 @@ def compute_kc(dict_user, dict_sample):
                                     c_map_new[i_y-i_window, i_x+size_window] = c_map_new[i_y-i_window, i_x+size_window] + solute_to_move/n_node_available
                                 if right_max_available:
                                     c_map_new[i_y+i_window, i_x+size_window] = c_map_new[i_y+i_window, i_x+size_window] + solute_to_move/n_node_available
-                                c_map_new[i_y, i_x] = 1
+                                c_map_new[i_y, i_x] = dict_user['C_eq']
                                 solute_moved = True
                         i_window = i_window + 1
                     size_window = size_window + 1   
 
             # push solute in of the solid
-            if not dilated_M[i_y, i_x] and c_map[i_y, i_x] < 1: # threshold value
+            if not dilated_M[i_y, i_x] and c_map[i_y, i_x] < dict_user['C_eq']: # threshold value
                 solute_moved = False
                 size_window = 1
                 # compute solute to move
-                solute_to_move = 1 - c_map[i_y, i_x]
+                solute_to_move = dict_user['C_eq'] - c_map[i_y, i_x]
                 while not solute_moved :
                     i_window = 0
                     while not solute_moved and i_window <= size_window:
@@ -709,7 +714,7 @@ def compute_kc(dict_user, dict_sample):
                                 #to the right
                                 if right_available:
                                     c_map_new[i_y, i_x+size_window] = c_map_new[i_y, i_x+size_window] - solute_to_move/n_node_available
-                                c_map_new[i_y, i_x] = 1
+                                c_map_new[i_y, i_x] = dict_user['C_eq']
                                 solute_moved = True
 
                         #Look to move diagonally
@@ -785,7 +790,7 @@ def compute_kc(dict_user, dict_sample):
                                     c_map_new[i_y-i_window, i_x+size_window] = c_map_new[i_y-i_window, i_x+size_window] - solute_to_move/n_node_available
                                 if right_max_available:
                                     c_map_new[i_y+i_window, i_x+size_window] = c_map_new[i_y+i_window, i_x+size_window] - solute_to_move/n_node_available
-                                c_map_new[i_y, i_x] = 1
+                                c_map_new[i_y, i_x] = dict_user['C_eq']
                                 solute_moved = True
                         i_window = i_window + 1
                     size_window = size_window + 1   

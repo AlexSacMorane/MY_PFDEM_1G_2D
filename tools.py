@@ -95,7 +95,6 @@ def reduce_n_vtk_files(dict_user, dict_sample):
                 \t\t\t<PDataArray type="Float64" Name="as"/>
                 \t\t\t<PDataArray type="Float64" Name="kc"/>
                 \t\t\t<PDataArray type="Float64" Name="eta1"/>
-                \t\t\t<PDataArray type="Float64" Name="eta2"/>
                 \t\t\t<PDataArray type="Float64" Name="c"/>
                 \t\t</PPointData>
                 \t\t<PCellData>
@@ -920,7 +919,7 @@ def remesh(dict_user, dict_sample):
     '''
     Remesh the problem.
     
-    Eta1, Eta2, c maps are updated
+    Eta1, c maps are updated
     x_L, n_mesh_x, y_L, n_mesh_y are updated.
     '''
     # search the grain boundaries
