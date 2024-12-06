@@ -85,8 +85,8 @@ def add_data():
 
 def check():
     '''
-    Try to detect a wteady-state of the overlap between the two particles.
-    A maximum number of iteration is used.
+    Try to detect a steady-state of the overlap between the two particles.
+    A maximum number of iterations is used.
     '''
     if O.iter < max(n_ite_max*0.01, n_steady_state_detection):
         return
