@@ -18,7 +18,7 @@ def create_materials():
 
 def create_polyhedral():
     '''
-    Recreate polydra from data extrapolated with phase field output.
+    Recreate polyhedra from data extrapolated with phase field output.
     '''
     print("Creating polyhedra")
 
